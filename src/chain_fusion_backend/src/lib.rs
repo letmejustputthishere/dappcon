@@ -6,7 +6,7 @@ mod guard;
 mod job;
 mod lifecycle;
 mod state;
-// mod storage;
+mod storage;
 mod transactions;
 mod utils;
 
@@ -14,9 +14,11 @@ use std::time::Duration;
 
 use eth_logs::scrape_eth_logs;
 
+use ic_canisters_http_types::{HttpRequest, HttpResponse, HttpResponseBuilder};
 use ic_cdk::println;
 use lifecycle::InitArg;
 use state::read_state;
+use storage::get_asset;
 
 use crate::state::{initialize_state, mutate_state};
 
@@ -62,22 +64,22 @@ async fn transfer_eth(value: u128, to: String) {
 
 // uncomment this if you need to serve stored assets from `storage.rs` via http requests
 
-// #[ic_cdk::query]
-// fn http_request(req: HttpRequest) -> HttpResponse {
-//     if let Some(asset) = get_asset(&req.path().to_string()) {
-//         let mut response_builder = HttpResponseBuilder::ok();
+#[ic_cdk::query]
+fn http_request(req: HttpRequest) -> HttpResponse {
+    if let Some(asset) = get_asset(&req.path().to_string()) {
+        let mut response_builder = HttpResponseBuilder::ok();
 
-//         for (name, value) in asset.headers {
-//             response_builder = response_builder.header(name, value);
-//         }
+        for (name, value) in asset.headers {
+            response_builder = response_builder.header(name, value);
+        }
 
-//         response_builder
-//             .with_body_and_content_length(asset.body)
-//             .build()
-//     } else {
-//         HttpResponseBuilder::not_found().build()
-//     }
-// }
+        response_builder
+            .with_body_and_content_length(asset.body)
+            .build()
+    } else {
+        HttpResponseBuilder::not_found().build()
+    }
+}
 
 // Enable Candid export, read more [here](https://internetcomputer.org/docs/current/developer-docs/backend/rust/generating-candid/)
 ic_cdk::export_candid!();
